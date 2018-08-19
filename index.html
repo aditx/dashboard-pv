@@ -1,0 +1,207 @@
+<html ng-app="dashboard_apps">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Dashboard System</title>
+  <script src="lib/jquery.min.js"></script>
+  <script src="lib/angular.min.js"></script>
+  <script src="lib/angular-ui-router.min.js"></script>
+  <script src="lib/dashboard.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+  <script src="vendor/chartist/js/chartist.min.js"></script>
+
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+	<link rel="stylesheet" href="vendor/font-awesome/css/font-awesome.min.css">
+	<link rel="stylesheet" href="vendor/linearicons/style.css">
+	<link rel="stylesheet" href="vendor/chartist/css/chartist-custom.css">
+	<!-- MAIN CSS -->
+	<link rel="stylesheet" href="css/main.css">
+  <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+</head>
+
+<body>
+  <div>
+
+    <div class="main">
+			<!-- MAIN CONTENT -->
+			<div class="main-content">
+				<div class="container-fluid">
+					<!-- OVERVIEW -->
+					<div class="panel panel-headline">
+						<div class="panel-heading">
+							<h3 class="panel-title">PV Solar Panel PAMA 3 Performance Overview</h3>
+							<p class="panel-subtitle" ng-controller="PeriodController">
+                Period: {{ data.data[0].time_data | date:'dd-MM-yyyy' }} - {{ data.data[1].time_data | date:'dd-MM-yyyy' }}
+              </p>
+						</div>
+						<div class="panel-body">
+							<div class="row">
+								<div class="col-md-3">
+									<div class="metric">
+										<span class="icon"><img src="img/power.png" width="80" height="80"/></span>
+										<p>
+                      <span class="number">Total PV Power</span>
+											<span class="number" ng-controller="SumPowerController">{{ data.data[0].total_power }}</span>
+											<span class="title">kWH</span>
+										</p>
+									</div>
+								</div>
+								<div class="col-md-3">
+									<div class="metric">
+										<span class="icon"><img src="img/lamp.png" width="80" height="80"/></span>
+										<p>
+                      <span class="number">Averange Energy</span>
+											<span class="number" ng-controller="AveragePowerController">{{ data.data[0].total_power.substring(0,6) }}</span>
+											<span class="title">kWH</span>
+										</p>
+									</div>
+								</div>
+								<div class="col-md-3">
+									<div class="metric">
+										<span class="icon"><img src="img/green.png" width="80" height="80"/></span>
+										<p>
+                      <span class="number">Total CO2 Avoid</span>
+											<span class="number" ng-controller="SumCO2Controller">{{ data.data[0].co2 * 10 }}</span>
+											<span class="title">Ton</span>
+										</p>
+									</div>
+								</div>
+								<div class="col-md-3">
+									<div class="metric">
+										<span class="icon"><img src="img/radiation.png" width="80" height="80"/></span>
+										<p>
+                      <span class="number">Irradiation (AVG)</span>
+											<span class="number" ng-controller="AvgIrradianceController">{{ data.data[0].irradience.substring(0,4) }}</span>
+											<span class="title">W/m2</span>
+										</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <!-- MULTI CHARTS -->
+              <div class="panel">
+                <div class="panel-heading">
+                  <h3 class="panel-title">Power (kWH) Performance</h3>
+                </div>
+                <div class="panel-body" ng-controller="MonthlyPowerController">
+                  <div id="demo-area-chart" class="ct-chart"></div>
+                  <!-- <ul ng-repeat="item in data.data">
+                    <li>{{ item.monthly }} | {{ item.sum_power_month }}</li>
+                  </ul> -->
+                </div>
+              </div>
+              <!-- END MULTI CHARTS -->
+            </div>
+
+            <div class="col-md-6">
+              <div class="panel">
+                <div class="panel-heading">
+                  <h3 class="panel-title">Average System Effectiveness</h3>
+                </div>
+                <div class="panel-body">
+									<div id="demo-line-chart" class="ct-chart"></div>
+								</div>
+              </div>
+            </div>
+          </div>
+					<!-- END OVERVIEW -->
+
+				</div>
+			</div>
+			<!-- END MAIN CONTENT -->
+		</div>
+		<!-- END MAIN -->
+  </div>
+  <script>
+	$(document).ready(function() {
+
+    function getDataPower(){
+      var options;
+      var labels = [];
+      var seriesx = [];
+      var request = new XMLHttpRequest();
+
+      request.open('GET', 'http://localhost:7000/VW_LOOKUP_MONTHLY_SUMPOWER', true);
+      request.onload = function () {
+        var data_parse = JSON.parse(this.response);
+
+        if (request.status >= 200 && request.status < 400) {
+            data_parse.forEach(item => {
+              //console.log(item.monthly);
+              labels.push(item.monthly);
+              seriesx.push(item.sum_power_month);
+              //console.log(item.sum_power_month);
+            });
+        } else {
+          console.log('error');
+        }
+      }
+
+      var data = {labels, series: [seriesx,]};
+      request.send();
+
+      // area chart
+  		options = {
+  			height: "270px",
+  			showArea: true,
+  			showLine: false,
+  			showPoint: false,
+  			axisX: {
+  				showGrid: false
+  			},
+  			lineSmooth: false,
+  		};
+
+  		new Chartist.Line('#demo-area-chart', data, options);
+    }
+
+    function getDataEffectiveness(){
+      var options;
+      var labels = [];
+      var seriesy = [];
+      var request = new XMLHttpRequest();
+
+      request.open('GET', 'http://localhost:7000/VW_LOOKUP_MONTHLY_EFFECTIVENESS', true);
+      request.onload = function () {
+        var data_parse = JSON.parse(this.response);
+
+        if (request.status >= 200 && request.status < 400) {
+            data_parse.forEach(item => {
+              //console.log(item.monthly);
+              labels.push(item.monthly);
+              seriesy.push(item.effectiveness);
+              //console.log(item.sum_power_month);
+            });
+        } else {
+          console.log('error');
+        }
+      }
+
+      var data_effectiveness = {labels, series: [seriesy,]};
+      request.send();
+
+      // line chart
+  		options = {
+  			height: "300px",
+  			showPoint: true,
+  			axisX: {
+  				showGrid: false
+  			},
+  			lineSmooth: false,
+  		};
+
+  		new Chartist.Line('#demo-line-chart', data_effectiveness, options);
+    }
+
+    getDataPower();
+    getDataEffectiveness();
+
+	});
+	</script>
+</body>
+</html>
