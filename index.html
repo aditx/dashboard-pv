@@ -8,8 +8,8 @@
   <script src="lib/angular.min.js"></script>
   <script src="lib/angular-ui-router.min.js"></script>
   <script src="lib/dashboard.js"></script>
-  <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
   <script src="vendor/chartist/js/chartist.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
 
   <link rel="stylesheet" href="css/bootstrap.min.css">
 	<link rel="stylesheet" href="vendor/font-awesome/css/font-awesome.min.css">
@@ -51,7 +51,7 @@
 									<div class="metric">
 										<span class="icon"><img src="img/lamp.png" width="80" height="80"/></span>
 										<p>
-                      <span class="number">Averange Energy</span>
+                      <span class="number">Average Energy</span>
 											<span class="number" ng-controller="AveragePowerController">{{ data.data[0].total_power.substring(0,6) }}</span>
 											<span class="title">kWH</span>
 										</p>
@@ -125,6 +125,7 @@
       var labels = [];
       var seriesx = [];
       var request = new XMLHttpRequest();
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
       request.open('GET', 'http://localhost:7000/VW_LOOKUP_MONTHLY_SUMPOWER', true);
       request.onload = function () {
@@ -133,31 +134,34 @@
         if (request.status >= 200 && request.status < 400) {
             data_parse.forEach(item => {
               //console.log(item.monthly);
-              labels.push(item.monthly);
+              labels.push(monthNames[item.monthly-1]);
               seriesx.push(item.sum_power_month);
-              //console.log(item.sum_power_month);
+              //console.log(monthNames[item.monthly-1]);
+              var data = {labels, series: [seriesx,]};
+              // area chart
+          		options = {
+          			height: "270px",
+          			showArea: true,
+          			showLine: false,
+          			showPoint: false,
+          			axisX: {
+          				showGrid: true
+          			},
+          			lineSmooth: true,
+          		};
+
+          		new Chartist.Line('#demo-area-chart', data, options);
             });
         } else {
           console.log('error');
         }
       }
 
-      var data = {labels, series: [seriesx,]};
+
+      //console.log(data);
       request.send();
 
-      // area chart
-  		options = {
-  			height: "270px",
-  			showArea: true,
-  			showLine: false,
-  			showPoint: false,
-  			axisX: {
-  				showGrid: false
-  			},
-  			lineSmooth: false,
-  		};
 
-  		new Chartist.Line('#demo-area-chart', data, options);
     }
 
     function getDataEffectiveness(){
@@ -165,6 +169,7 @@
       var labels = [];
       var seriesy = [];
       var request = new XMLHttpRequest();
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
       request.open('GET', 'http://localhost:7000/VW_LOOKUP_MONTHLY_EFFECTIVENESS', true);
       request.onload = function () {
@@ -173,9 +178,20 @@
         if (request.status >= 200 && request.status < 400) {
             data_parse.forEach(item => {
               //console.log(item.monthly);
-              labels.push(item.monthly);
+              labels.push(monthNames[item.monthly-1]);
               seriesy.push(item.effectiveness);
               //console.log(item.sum_power_month);
+              // line chart
+          		options = {
+          			height: "300px",
+          			showPoint: true,
+          			axisX: {
+          				showGrid: false
+          			},
+          			lineSmooth: true,
+          		};
+
+          		new Chartist.Line('#demo-line-chart', data_effectiveness, options);
             });
         } else {
           console.log('error');
@@ -184,18 +200,6 @@
 
       var data_effectiveness = {labels, series: [seriesy,]};
       request.send();
-
-      // line chart
-  		options = {
-  			height: "300px",
-  			showPoint: true,
-  			axisX: {
-  				showGrid: false
-  			},
-  			lineSmooth: false,
-  		};
-
-  		new Chartist.Line('#demo-line-chart', data_effectiveness, options);
     }
 
     getDataPower();
